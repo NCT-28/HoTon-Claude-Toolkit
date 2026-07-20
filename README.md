@@ -23,7 +23,7 @@ not generic).
 ## Install into a project
 
 ```bash
-~/dotfiles/claude-toolkit/install.sh /path/to/project   # or cd into it and omit the arg
+~/Desktop/workplace/develop/HoTon-Project/claude-toolkit/install.sh /path/to/project   # or cd into it and omit the arg
 ```
 
 Idempotent:
