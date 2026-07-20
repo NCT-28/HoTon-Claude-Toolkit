@@ -33,6 +33,12 @@ curl -fsSL https://raw.githubusercontent.com/NCT-28/HoTon-Claude-Toolkit/main/bo
 Caches the clone at `~/.local/share/claude-toolkit` by default. Override with
 `CLAUDE_TOOLKIT_DIR=...` (cache location) or `CLAUDE_TOOLKIT_REPO=...` (a fork/mirror URL).
 
+Already `cd`'d into the target project? Drop the path — it defaults to `$PWD`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/NCT-28/HoTon-Claude-Toolkit/main/bootstrap.sh | bash
+```
+
 **Already have this repo cloned locally** — call `install.sh` directly:
 
 ```bash
