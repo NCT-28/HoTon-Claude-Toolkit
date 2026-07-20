@@ -22,6 +22,19 @@ not generic).
 
 ## Install into a project
 
+**Any machine, no local clone needed** — `bootstrap.sh` clones (or pulls, if already
+cached) the repo, then runs `install.sh` for you:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/NCT-28/HoTon-Claude-Toolkit/main/bootstrap.sh \
+  | bash -s -- /path/to/project
+```
+
+Caches the clone at `~/.local/share/claude-toolkit` by default. Override with
+`CLAUDE_TOOLKIT_DIR=...` (cache location) or `CLAUDE_TOOLKIT_REPO=...` (a fork/mirror URL).
+
+**Already have this repo cloned locally** — call `install.sh` directly:
+
 ```bash
 ~/Desktop/workplace/develop/HoTon-Project/claude-toolkit/install.sh /path/to/project   # or cd into it and omit the arg
 ```
