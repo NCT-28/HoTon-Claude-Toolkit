@@ -3,10 +3,24 @@
 # skeleton) into a project. Safe to re-run (idempotent, backs up before overwrite).
 #
 # Usage:
-#   ~/dotfiles/claude-toolkit/install.sh [target-dir]
+#   ~/dotfiles/claude-toolkit/install.sh [--skip-index] [target-dir]
 #   (defaults to $PWD if target-dir omitted)
+#
+# By default, after copying files, also runs `serena project index` (builds the
+# LSP symbol cache) and `graphify update` (builds graphify-out/) against the
+# target project — both are local/offline, no LLM calls. Pass --skip-index to
+# skip that (e.g. very large repo, or you want to trigger it manually later).
 
 set -euo pipefail
+
+SKIP_INDEX=false
+ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --skip-index) SKIP_INDEX=true ;;
+    *) ARGS+=("$arg") ;;
+  esac
+done
 
 # Resolve this script's own dir, following symlinks, without GNU-only readlink -f.
 resolve_dir() {
@@ -21,7 +35,7 @@ resolve_dir() {
 }
 TOOLKIT_DIR="$(resolve_dir "${BASH_SOURCE[0]}")"
 
-TARGET="${1:-$PWD}"
+TARGET="${ARGS[0]:-$PWD}"
 if [ ! -d "$TARGET" ]; then
   echo "error: target dir '$TARGET' does not exist" >&2
   exit 1
@@ -111,6 +125,36 @@ if [ -f "$dst" ]; then
 else
   cp "$TOOLKIT_DIR/CLAUDE.md.template" "$dst"
   installed+=("CLAUDE.md (from template — fill in Project Overview)")
+fi
+
+# --- serena: index project (auto-creates .serena/project.yml, local LSP symbol cache) ---
+if [ "$SKIP_INDEX" = false ]; then
+  if command -v serena >/dev/null 2>&1; then
+    echo "Indexing project with serena..."
+    # decline every "enable additional language?" prompt (finite feed, avoids
+    # SIGPIPE-from-`yes`-under-set-o-pipefail reporting a false failure)
+    if printf 'n\n%.0s' {1..30} | serena project index "$TARGET" >/dev/null 2>&1; then
+      installed+=(".serena/ (indexed)")
+    else
+      skipped+=("serena index (command failed — run 'serena project index $TARGET' manually to see the error)")
+    fi
+  else
+    skipped+=("serena index (serena not on \$PATH)")
+  fi
+
+  # --- graphify: build knowledge graph (AST-only, no LLM calls) ---
+  if command -v graphify >/dev/null 2>&1; then
+    echo "Building graphify knowledge graph..."
+    if (cd "$TARGET" && graphify update . >/dev/null 2>&1); then
+      installed+=("graphify-out/ (built)")
+    else
+      skipped+=("graphify update (command failed — run 'graphify update $TARGET' manually to see the error)")
+    fi
+  else
+    skipped+=("graphify update (graphify not on \$PATH)")
+  fi
+else
+  skipped+=("serena index, graphify update (--skip-index passed)")
 fi
 
 echo

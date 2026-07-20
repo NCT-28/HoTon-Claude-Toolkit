@@ -51,11 +51,27 @@ Idempotent:
 - `.mcp.json` is merged (existing project servers win over toolkit servers on name clash), old file backed up.
 - `CLAUDE.md` is only created if missing — an existing one is never touched or overwritten.
 
+After copying files, by default also runs (both local/offline, no LLM calls):
+- `serena project index <target>` — auto-creates `.serena/project.yml`, builds the LSP symbol
+  cache. Declines every "enable additional language?" prompt, keeping only the detected main language.
+- `graphify update <target>` — builds/refreshes `graphify-out/` (AST-only extraction).
+
+Skip both with `--skip-index` (e.g. very large repo, or you'd rather trigger them
+manually later):
+
+```bash
+~/Desktop/workplace/develop/HoTon-Project/claude-toolkit/install.sh --skip-index /path/to/project
+```
+
+Either step is skipped (non-fatal, noted in the "Skipped" summary) if `serena` /
+`graphify` isn't on `$PATH`, or if the command itself fails.
+
 ## Requirements
 
 - `jq` (JSON merge/backup diffing)
-- `graphify` on `$PATH` if you want the graphify PreToolUse hook-guards to do anything
-  (they no-op safely if `graphify` isn't installed)
+- `serena` on `$PATH` for the auto-index step (skipped otherwise)
+- `graphify` on `$PATH` for the auto-index step and for the PreToolUse hook-guards
+  to do anything (both no-op safely if `graphify` isn't installed)
 
 ## Updating the toolkit itself
 
