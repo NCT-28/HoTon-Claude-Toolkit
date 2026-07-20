@@ -66,12 +66,24 @@ manually later):
 Either step is skipped (non-fatal, noted in the "Skipped" summary) if `serena` /
 `graphify` isn't on `$PATH`, or if the command itself fails.
 
+Also ensures the [`superpowers`](https://github.com/obra/superpowers) Claude Code
+plugin is installed (`claude plugin marketplace add obra/superpowers` +
+`claude plugin install superpowers@superpowers-dev`) — skipped if already present.
+**This is a global, user-scope install**, not per-project: it applies to every
+project you open, not just the one you're installing the toolkit into. Skip with
+`--skip-plugins`.
+
+```bash
+~/Desktop/workplace/develop/HoTon-Project/claude-toolkit/install.sh --skip-index --skip-plugins /path/to/project
+```
+
 ## Requirements
 
 - `jq` (JSON merge/backup diffing)
 - `serena` on `$PATH` for the auto-index step (skipped otherwise)
 - `graphify` on `$PATH` for the auto-index step and for the PreToolUse hook-guards
   to do anything (both no-op safely if `graphify` isn't installed)
+- `claude` CLI on `$PATH` for the superpowers plugin step (skipped otherwise)
 
 ## Updating the toolkit itself
 

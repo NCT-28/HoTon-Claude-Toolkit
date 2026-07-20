@@ -3,21 +3,27 @@
 # skeleton) into a project. Safe to re-run (idempotent, backs up before overwrite).
 #
 # Usage:
-#   ~/dotfiles/claude-toolkit/install.sh [--skip-index] [target-dir]
+#   ~/dotfiles/claude-toolkit/install.sh [--skip-index] [--skip-plugins] [target-dir]
 #   (defaults to $PWD if target-dir omitted)
 #
 # By default, after copying files, also runs `serena project index` (builds the
 # LSP symbol cache) and `graphify update` (builds graphify-out/) against the
 # target project — both are local/offline, no LLM calls. Pass --skip-index to
 # skip that (e.g. very large repo, or you want to trigger it manually later).
+#
+# Also ensures the `superpowers` Claude Code plugin (github:obra/superpowers) is
+# installed — this is a global, user-scope install (not per-project), skipped if
+# already present. Pass --skip-plugins to skip that.
 
 set -euo pipefail
 
 SKIP_INDEX=false
+SKIP_PLUGINS=false
 ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --skip-index) SKIP_INDEX=true ;;
+    --skip-plugins) SKIP_PLUGINS=true ;;
     *) ARGS+=("$arg") ;;
   esac
 done
@@ -155,6 +161,27 @@ if [ "$SKIP_INDEX" = false ]; then
   fi
 else
   skipped+=("serena index, graphify update (--skip-index passed)")
+fi
+
+# --- superpowers plugin: global user-scope, install once if missing ---
+if [ "$SKIP_PLUGINS" = false ]; then
+  if command -v claude >/dev/null 2>&1; then
+    if claude plugin list --json 2>/dev/null | jq -e 'any(.[]; .id == "superpowers@superpowers-dev")' >/dev/null 2>&1; then
+      skipped+=("superpowers plugin (already installed)")
+    else
+      echo "Installing superpowers plugin (global, user-scope)..."
+      claude plugin marketplace add obra/superpowers >/dev/null 2>&1 || true
+      if claude plugin install superpowers@superpowers-dev >/dev/null 2>&1; then
+        installed+=("superpowers@superpowers-dev plugin (global — applies to all projects, not just this one)")
+      else
+        skipped+=("superpowers plugin (install failed — run 'claude plugin marketplace add obra/superpowers && claude plugin install superpowers@superpowers-dev' manually)")
+      fi
+    fi
+  else
+    skipped+=("superpowers plugin ('claude' CLI not on \$PATH)")
+  fi
+else
+  skipped+=("superpowers plugin (--skip-plugins passed)")
 fi
 
 echo
