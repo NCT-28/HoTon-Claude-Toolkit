@@ -9,16 +9,21 @@ Source of truth for the toolkit files lives here. Edit here, then re-run
 ## Contents
 
 - `mcp/.mcp.json` — serena (code nav), context7 (lib docs), context-mode (large-output sandbox)
-- `claude/settings.json` — 6 hooks wired up (UserPromptSubmit, SessionStart, PreToolUse x3, PostToolUse x2, PreCompact)
+- `claude/settings.json` — 5 hooks wired up (UserPromptSubmit, SessionStart, PreToolUse x1, PostToolUse x2, PreCompact)
 - `claude/hooks/*.sh` — the hook scripts themselves (generic, no project-specific paths)
 - `claude/skills/mcp-workflow.md`, `verification.md` — behavioral skills referenced by CLAUDE.md.template
-- `claude/skills/graphify/` — graphify skill (works only if the target project also runs `graphify` separately)
 - `CLAUDE.md.template` — generic behavioral guidelines section. Project-specific sections
   (Project Overview, Service Map, Key Commands...) are NOT included — add those yourself
   below the toolkit marker in the generated file.
 
 Deliberately excluded: the `verify` skill from HoTon-LmR (hoton-lmu/docker-specific,
-not generic).
+not generic), and any code-graph skill — `graphify` (the old pip-installable, self-contained
+grapher) is gone. Its replacement, `graphtr`, is backed by the hoton-graphtr MCP server +
+Docker + Neo4j and is project-specific, not a generic tool this toolkit can bundle or
+auto-build. If a project wants it, run `python3 scripts/init_graphtr_skills.py <target>`
+from the HoTon-GrapHTR repo to install the `graphtr`/`graphtr-knowledge` skills into it —
+the generic hooks/skills here (`mcp-workflow.md`, `enforce-serena.sh`, `CLAUDE.md.template`)
+already check for `graphtr-out/` and route to it when present.
 
 ## Install into a project
 
@@ -46,25 +51,24 @@ curl -fsSL https://raw.githubusercontent.com/NCT-28/HoTon-Claude-Toolkit/main/bo
 ```
 
 Idempotent:
-- `.claude/settings.json`, `.claude/hooks/*.sh`, `.claude/skills/{mcp-workflow.md,verification.md,graphify/}`
+- `.claude/settings.json`, `.claude/hooks/*.sh`, `.claude/skills/{mcp-workflow.md,verification.md}`
   are synced from the toolkit; a differing existing copy is backed up to `*.bak-<timestamp>` first.
 - `.mcp.json` is merged (existing project servers win over toolkit servers on name clash), old file backed up.
 - `CLAUDE.md` is only created if missing — an existing one is never touched or overwritten.
 
-After copying files, by default also runs (both local/offline, no LLM calls):
+After copying files, by default also runs (local/offline, no LLM calls):
 - `serena project index <target>` — auto-creates `.serena/project.yml`, builds the LSP symbol
   cache. Declines every "enable additional language?" prompt, keeping only the detected main language.
-- `graphify update <target>` — builds/refreshes `graphify-out/` (AST-only extraction).
 
-Skip both with `--skip-index` (e.g. very large repo, or you'd rather trigger them
+Skip with `--skip-index` (e.g. very large repo, or you'd rather trigger it
 manually later):
 
 ```bash
 ~/Desktop/workplace/develop/HoTon-Project/claude-toolkit/install.sh --skip-index /path/to/project
 ```
 
-Either step is skipped (non-fatal, noted in the "Skipped" summary) if `serena` /
-`graphify` isn't on `$PATH`, or if the command itself fails.
+This step is skipped (non-fatal, noted in the "Skipped" summary) if `serena`
+isn't on `$PATH`, or if the command itself fails.
 
 Also ensures the [`superpowers`](https://github.com/obra/superpowers) Claude Code
 plugin is installed (`claude plugin marketplace add obra/superpowers` +
@@ -81,8 +85,6 @@ project you open, not just the one you're installing the toolkit into. Skip with
 
 - `jq` (JSON merge/backup diffing)
 - `serena` on `$PATH` for the auto-index step (skipped otherwise)
-- `graphify` on `$PATH` for the auto-index step and for the PreToolUse hook-guards
-  to do anything (both no-op safely if `graphify` isn't installed)
 - `claude` CLI on `$PATH` for the superpowers plugin step (skipped otherwise)
 
 ## Updating the toolkit itself

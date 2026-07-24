@@ -7,9 +7,13 @@
 #   (defaults to $PWD if target-dir omitted)
 #
 # By default, after copying files, also runs `serena project index` (builds the
-# LSP symbol cache) and `graphify update` (builds graphify-out/) against the
-# target project — both are local/offline, no LLM calls. Pass --skip-index to
-# skip that (e.g. very large repo, or you want to trigger it manually later).
+# LSP symbol cache) against the target project — local/offline, no LLM calls.
+# Pass --skip-index to skip that (e.g. very large repo, or you want to trigger
+# it manually later).
+#
+# Does NOT install a code-graph skill (graphtr-out/): that's project-specific,
+# backed by the hoton-graphtr MCP server + Docker, and is set up per-project via
+# HoTon-GrapHTR's own scripts/init_graphtr_skills.py, not by this toolkit.
 #
 # Also ensures the `superpowers` Claude Code plugin (github:obra/superpowers) is
 # installed — this is a global, user-scope install (not per-project), skipped if
@@ -89,7 +93,7 @@ for f in "$TOOLKIT_DIR"/claude/hooks/*.sh; do
   installed+=(".claude/hooks/$name")
 done
 
-# --- skills: mcp-workflow.md, verification.md, graphify/ ---
+# --- skills: mcp-workflow.md, verification.md ---
 for name in mcp-workflow.md verification.md; do
   src="$TOOLKIT_DIR/claude/skills/$name"
   dst="$TARGET/.claude/skills/$name"
@@ -100,14 +104,6 @@ for name in mcp-workflow.md verification.md; do
   cp "$src" "$dst"
   installed+=(".claude/skills/$name")
 done
-
-if [ -d "$TARGET/.claude/skills/graphify" ]; then
-  rm -rf "$TARGET/.claude/skills/graphify.bak-$TS"
-  mv "$TARGET/.claude/skills/graphify" "$TARGET/.claude/skills/graphify.bak-$TS"
-  backed_up+=(".claude/skills/graphify -> graphify.bak-$TS")
-fi
-cp -R "$TOOLKIT_DIR/claude/skills/graphify" "$TARGET/.claude/skills/graphify"
-installed+=(".claude/skills/graphify/")
 
 # --- .mcp.json: merge mcpServers, don't clobber project-specific servers ---
 dst="$TARGET/.mcp.json"
@@ -147,20 +143,8 @@ if [ "$SKIP_INDEX" = false ]; then
   else
     skipped+=("serena index (serena not on \$PATH)")
   fi
-
-  # --- graphify: build knowledge graph (AST-only, no LLM calls) ---
-  if command -v graphify >/dev/null 2>&1; then
-    echo "Building graphify knowledge graph..."
-    if (cd "$TARGET" && graphify update . >/dev/null 2>&1); then
-      installed+=("graphify-out/ (built)")
-    else
-      skipped+=("graphify update (command failed — run 'graphify update $TARGET' manually to see the error)")
-    fi
-  else
-    skipped+=("graphify update (graphify not on \$PATH)")
-  fi
 else
-  skipped+=("serena index, graphify update (--skip-index passed)")
+  skipped+=("serena index (--skip-index passed)")
 fi
 
 # --- superpowers plugin: global user-scope, install once if missing ---

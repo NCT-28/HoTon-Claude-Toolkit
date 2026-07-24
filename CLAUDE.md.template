@@ -10,7 +10,7 @@ Codex will review your output once you are done.
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
 ## CRITICAL: Before ANY response (including questions)
-- For ANY question about this codebase → call serena (or graphify if available) FIRST, then answer
+- For ANY question about this codebase → call serena (or graphtr if this project has it set up) FIRST, then answer
 - For external library/SDK questions → use context7 first, then serena for codebase integration
 - Do NOT answer from training memory alone if the question involves code in this repo
 
@@ -116,19 +116,21 @@ Quick reference (full detail in skill):
 - External library/SDK → `context7` first
 - Internal codebase → `serena` first
 - Large output / multi-command → `ctx_batch_execute`
-- `graphify-out/` exists → use graphify before serena deep-reads
+- `graphtr-out/` exists → use graphtr before serena deep-reads
 
 ---
 
-## graphify
+## graphtr
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+If this project has a `graphtr-out/` directory, it's a local snapshot of the hoton-graphtr
+MCP server's code graph for this repo (see the `graphtr` skill for the full workflow).
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- For codebase questions, first run `python3 graphtr-out/query.py query "<keyword>"` when graphtr-out/graph.json exists. Use `graphtr-out/query.py path "<A>" "<B>"` for relationships and `graphtr-out/query.py explain "<name>"` for a node + its neighbors. These return a scoped subgraph, usually much smaller than raw grep output.
+- If the script errors or the graph looks stale, fall back to `mcp__hoton-graphtr__query_code_graph` with the `user_id`/`repo_id` from `graphtr-out/manifest.json`.
+- Open `graphtr-out/graphtr.html` in a browser for a visual, interactive view.
+- Refreshing the graph after code changes is a re-export from hoton-graphtr, not a local rebuild — see the `graphtr` skill's Refresh flow; do not call `ingest_codebase` again (it mints a new `repo_id` and creates a duplicate graph).
+- If there's no `graphtr-out/` yet, this section doesn't apply — skip it and use `serena` directly.
 
 ---
 
